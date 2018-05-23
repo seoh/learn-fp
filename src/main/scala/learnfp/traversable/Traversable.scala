@@ -25,36 +25,36 @@ object TraversableInstances {
   implicit val tuple3TraversableInstance = new Traversable[STuple3] {
     override def traverse[A, B, F[_]](xs: (F[A], F[A], F[A]))(fx: A => B)(implicit foldable: Foldable[STuple3],
                                                                           functor: Functor[F], applicative: Applicative[F]): F[(B, B, B)] = {
+    // simplist solution
+    ((a1: A) => (a2: A) => (a3: A) =>
+        (fx(a1), fx(a2), fx(a3))) `<$>` xs._1 `<*>` xs._2 <*> xs._3
+
+/**
+      // Aggregation on List and make it tupled by hand
+      // could be generic solution with shapeless.
       foldable.foldr(xs)(applicative.pure(List.empty[B])) { (fa, acc) =>
         fa.fmap(a => (bs: List[B]) => fx(a) :: bs) <*> acc
       } fmap {
         case (b1 :: b2 :: b3 :: _) => (b1, b2, b3)
         case _ => throw new Exception
       }
-
-/**
-      val (fa1, fa2, fa3) = xs
-      val fb1 = fa1 fmap fx
-      val fb2 = fa2 fmap fx
-      val fb3 = fa3 fmap fx
-
-      val fb12: F[(B, B)] =
-        fb1.fmap(b1 => (b2: B) => (b1, b2)) <*> fb2
-      val fb123: F[(B, B, B)] =
-        fb12.fmap(b12 => (b3: B) => (b12._1, b12._2, b3)) <*> fb3
-
-      fb123
 **/
+
     }
 
   }
 
   implicit val listTraversableInstance = new Traversable[List] {
     override def traverse[A, B, F[_]](xs: List[F[A]])(fx: A => B)(implicit foldable: Foldable[List],
-                                                                  functor: Functor[F], applicative: Applicative[F]): F[List[B]] =
-    xs.foldRight(applicative.pure(List.empty[B])) { (fa, acc) =>
+                                                                  functor: Functor[F], applicative: Applicative[F]): F[List[B]] = xs.foldRight(applicative.pure(List.empty[B])) { (fa, acc) =>
       fa.fmap(a => (bs: List[B]) => fx(a) :: bs) <*> acc
     }
+
+/**
+    foldable.foldr(xs)(applicative.pure(List.empty[B])) { (fa, bs) =>
+      ((a: A) => fx(a) :: bs) <*> acc
+    }
+**/
   }
 }
 
