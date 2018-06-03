@@ -90,18 +90,37 @@ class FreeTest extends WordSpecLike with Matchers {
       type TurtleState[X] = State[Position, X]
       type TurtleStateWriter[X] = WriterT[X, TurtleState, List[String]]
 
-      // TODO: implement me
       class MovementToWriterTState extends Natural[Movement, TurtleStateWriter] {
         override def transform[A](a: Movement[A]): TurtleStateWriter[A] = a match {
-          case Start(pos) => ???
-          case MoveUp(d) => ???
-          case MoveDown(d) => ???
-          case MoveLeft(d) => ???
-          case MoveRight(d) => ???
+          case Start(pos) =>
+            for {
+              w <- WriterT.lift[A, TurtleState, List[String]](State.put(pos))
+              _ <- WriterT.tell[TurtleState, List[String]](List(s"starting at Position(${pos.x},${pos.y})"))
+            } yield w
+          case MoveUp(d) =>
+            for {
+              w <- WriterT.lift[A, TurtleState, List[String]](State.modify(p => p.copy(y = p.y + d)))
+              _ <- WriterT.tell[TurtleState, List[String]](List(s"moving up $d steps"))
+            } yield w
+          case MoveDown(d) =>
+            for {
+              w <- WriterT.lift[A, TurtleState, List[String]](State.modify(p => p.copy(y = p.y - d)))
+              _ <- WriterT.tell[TurtleState, List[String]](List(s"moving down $d steps"))
+            } yield w
+          case MoveLeft(d) =>
+            for {
+              w <- WriterT.lift[A, TurtleState, List[String]](State.modify(p => p.copy(x = p.x - d)))
+              _ <- WriterT.tell[TurtleState, List[String]](List(s"moving left $d steps"))
+            } yield w
+          case MoveRight(d) =>
+            for {
+              w <- WriterT.lift[A, TurtleState, List[String]](State.modify(p => p.copy(x = p.x + d)))
+              _ <- WriterT.tell[TurtleState, List[String]](List(s"moving right $d steps"))
+            } yield w
         }
       }
 
-      Free.foldF(program)(new MovementToWriterTState).runWriterT().run(Position(5,5)) shouldBe
+      Free.foldF(program)(new MovementToWriterTState).runWriterT().run(Position(10, 10)) shouldBe
         (Position(x=10 + 2 + 1, y= 10 + 2),
           (List("starting at Position(10,10)", "moving up 2 steps", "moving right 2 steps", "moving right 1 steps"), ()))
     }
