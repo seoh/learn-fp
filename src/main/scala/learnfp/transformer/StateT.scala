@@ -23,7 +23,7 @@ object StateT {
     new FunctorOps[A, ({type E[X] = StateT[S, M, X]})#E](a)
 
   implicit def stateTMonadInstance[S, M[_]](implicit f:Functor[M], m:Monad[M]) = new Monad[({type E[X] = StateT[S, M, X]})#E] {
-    override def pure[A](a: A): StateT[S, M, A] = StateT { s => (s, a).pure }
+    override def pure[A](a: A): StateT[S, M, A] = StateT { s => m.pure((s, a)) }
     override def flatMap[A, B](a: StateT[S, M, A])(fx: A => StateT[S, M, B]): StateT[S, M, B] = {
       StateT { s =>
         m.flatMap(a.runStateT(s)) {
@@ -47,7 +47,9 @@ object StateT {
 
   def lift[S, M[_], A](a:M[A])(implicit f:Functor[M], m:Monad[M]) = stateTMonadTransformerInstance[S, M].lift(a)
 
-  def putT[S, M[_]](s:S)(implicit m:Monad[M]):StateT[S, M, Unit] = StateT { _ => (s, ()).pure }
-  def getT[S, M[_]](implicit m:Monad[M]):StateT[S, M, S] = StateT { s => (s, s).pure }
+  def putT[S, M[_]](s:S)(implicit m:Monad[M]):StateT[S, M, Unit] = StateT { _ =>
+    m.pure((s, ())) }
+  def getT[S, M[_]](implicit m:Monad[M]):StateT[S, M, S] = StateT { s =>
+    m.pure((s, s)) }
 }
 

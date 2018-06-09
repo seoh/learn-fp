@@ -30,7 +30,7 @@ object WriterT {
   implicit def writerTMonadInstance[W, M[_]](implicit f:Functor[M], m:Monad[M], w:Monoid[W]) =
     new Monad[({type E[X] = WriterT[X, M, W]})#E]() {
       override def pure[A](a: A): WriterT[A, M, W] = WriterT { () =>
-        (w.mzero, a).pure
+        m.pure((w.mzero, a))
       }
 
       override def flatMap[A, B](a: WriterT[A, M, W])(fx: A => WriterT[B, M, W]): WriterT[B, M, W] = {
