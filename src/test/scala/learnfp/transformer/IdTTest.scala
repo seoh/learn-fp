@@ -3,6 +3,9 @@ package learnfp.transformer
 import learnfp.transformer.IdT._
 import org.scalatest.{Matchers, WordSpecLike}
 
+import learnfp.applicative.Applicative
+import learnfp.applicative.ApplicativeOps._
+
 import learnfp.functor.Functor
 import learnfp.functor.FunctorOps._
 import learnfp.monad.Monad
@@ -41,6 +44,15 @@ class IdTTest extends WordSpecLike with Matchers {
 
     def testLift[M[_]](implicit f:Functor[M], m:Monad[M]) = {
       IdT.idtMonadTransInstance[M].lift(m.pure(10)).runIdT shouldBe IdT.idtMonadInstance[M].pure(10).runIdT
+    }
+
+    def testAp[M[_]](implicit functor:Functor[M], ap: Applicative[M]) = {
+      type App[A] = IdT[A, M]
+      val A: Applicative[App] = implicitly
+
+      def foo(x:Int)(y:Int)(z:Int) = x + y + z
+      val f: Int => Int => Int => Int = foo _
+      foo _ `<$>` A.pure(10) <*> A.pure(20) <*> A.pure(30) shouldBe A.pure(10 + 20 + 30)
     }
 
     "work with Id" in {
